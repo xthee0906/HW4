@@ -17,14 +17,14 @@ def on_connect(self, mosq, obj, rc):
 
 def on_message(mosq, obj, msg):
     #print("[Received] Topic: " + msg.topic + ", Message: " + str(msg.payload) + "\n")
-    info_minusb = str(msg.payload).split("'") 
-    info_minus_slash_n = info_minusb[1].split("\\",1)
-    info = info_minus_slash_n[0].split("/")
+    minusb = str(msg.payload).split("'") 
+    minus_slash = minusb[1].split("\\",1)
+    info = minus_slash[0].split("/")
     roll = float(info[0])
     pitch = float(info[1])
     yaw = float(info[2])
     if (roll > 10 or pitch>10 or yaw>10):
-        print("Exceed 10 degree!"+" roll:"+str(roll)+" pitch:"+str(pitch)+" yaw:"+str(yaw))
+        print("Exceed 10 degree :"+" roll:"+str(roll)+" pitch:"+str(pitch)+" yaw:"+str(yaw))
 
 
 
@@ -47,14 +47,6 @@ mqttc.subscribe(topic, 0)
 
 # Publish messages from Python
 num = 0
-'''
-while num != 5:
-    ret = mqttc.publish(topic, "Message from Python!\n", qos=0)
-    if (ret[0] != 0):
-            print("Publish failed")
-    mqttc.loop()
-    time.sleep(1.5)
-    num += 1
-'''
+
 # Loop forever, receiving messages
 mqttc.loop_forever()
