@@ -9,8 +9,6 @@
 
 // GLOBAL VARIABLES
 WiFiInterface *wifi;
-InterruptIn btn2(BUTTON1);
-//InterruptIn btn3(SW3);
 volatile int message_num = 0;
 volatile int arrivedcount = 0;
 volatile bool closed = false;
@@ -20,9 +18,6 @@ const char* topic = "Mbed";
 Thread mqtt_thread(osPriorityHigh);
 EventQueue mqtt_queue;
 /**********************/
-AnalogOut Aout(PA_4);
-//InterruptIn btnRecord(BUTTON1);
-EventQueue queue(32 * EVENTS_EVENT_SIZE);
 Thread t;
 Accelerometer acc;
 Gyro gyro;
@@ -35,8 +30,6 @@ double roll, pitch, yaw;
 double gyroAngleX=0;
 double gyroAngleY=0;
 int counter=0;
-int idR[32] = {0};
-int indexR = 0;
 
 void record(void) {
 
@@ -69,19 +62,6 @@ void record(void) {
   //ThisThread::sleep_for(10ms);
 
 }
-
-void startRecord(void) {
-  //printf("---start---\n");
-  idR[indexR++] = queue.call_every(100ms, record);
-  indexR = indexR % 32;
-
-}
-
-void stopRecord(void) {
-  //printf("---stop---\n");
-  for (auto &i : idR)
-    queue.cancel(i);
-}
 /**********************/
 
 void messageArrived(MQTT::MessageData& md) {
@@ -96,27 +76,13 @@ void messageArrived(MQTT::MessageData& md) {
     ++arrivedcount;
 }
 
-void publish_message(MQTT::Client<MQTTNetwork, Countdown>* client) {
-    message_num++;
-    MQTT::Message message;
-    char buff[100];
-    sprintf(buff, "QoS0 Hello, Python! #%d", message_num);
-    message.qos = MQTT::QOS0;
-    message.retained = false;
-    message.dup = false;
-    message.payload = (void*) buff;
-    message.payloadlen = strlen(buff) + 1;
-    int rc = client->publish(topic, message);
-
-    printf("rc:  %d\r\n", rc);
-    printf("Puslish message: %s\r\n", buff);
-}
-
 void publish_message_gyro(MQTT::Client<MQTTNetwork, Countdown>* client) {
     message_num++;
     MQTT::Message message;
     char buff[100];
+
     sprintf(buff, "%f/%f/%f\n", roll, pitch, yaw);
+    
     message.qos = MQTT::QOS0;
     message.retained = false;
     message.dup = false;
@@ -133,7 +99,6 @@ void close_mqtt() {
 }
 
 int main() {
-
 
     wifi = WiFiInterface::get_default_instance();
     if (!wifi) {
@@ -179,15 +144,12 @@ int main() {
     }
 
     mqtt_thread.start(callback(&mqtt_queue, &EventQueue::dispatch_forever));
-    btn2.rise(mqtt_queue.event(&publish_message, &client));
-    //btn3.rise(&close_mqtt);
 
     int num = 0;
     while (num != 5) {
             client.yield(100);
             ++num;
     }
-    //publish_message(&client);
     while (1) {
             if (closed) break;
             client.yield(500);
